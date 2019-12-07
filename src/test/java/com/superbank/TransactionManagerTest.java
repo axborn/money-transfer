@@ -7,38 +7,86 @@ import static org.junit.Assert.assertEquals;
 import static spark.Spark.awaitInitialization;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.junit.After;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.superbank.model.Account;
+import com.superbank.utils.ConversionUtils;
 
 
 public class TransactionManagerTest {
 	
-    private CloseableHttpClient httpClient;
+	private String HOST_URL = "http://localhost:4567";
+
+	private static final Logger LOGGER = LogManager.getLogger(TransactionManagerTest.class);
+	
+	private final HttpClient httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
+            .build();
     
     @Before
     public void setup() {
-    	httpClient = HttpClients.createDefault();
     	TransactionManager.main(null);
         awaitInitialization();
     }
     
-	@Test public void testGetAccount() throws ClientProtocolException, IOException {
-        HttpGet request = new HttpGet("http://localhost:4567/account/123");
+	@Test public void testGetAccount() throws IOException, InterruptedException {
+		HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(HOST_URL + "/account/123"))
+                .build();
 
-        try (CloseableHttpResponse response = httpClient.execute(request)) {
-        	assertEquals("HTTP/1.1 200 OK", response.getStatusLine().toString());
-        }
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(200, response.statusCode());
+    }
+    
+	@Test public void testPostAccount_400() throws IOException, InterruptedException{
+		Account account = new Account();
+		account.setId("bad data");
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(ConversionUtils.buildFormData(account))
+                .uri(URI.create(HOST_URL + "/account"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(HttpStatus.BAD_REQUEST_400, response.statusCode());
+    }
+
+	@Test public void testPostAccount_201() throws IOException, InterruptedException{
+		Account account = new Account();
+		account.setCurrency("EUR");
+		account.setEmail("email@gmail.com");
+		account.setPhone("1234567890");
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(ConversionUtils.buildFormData(account))
+                .uri(URI.create(HOST_URL + "/account"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(HttpStatus.CREATED_201, response.statusCode());
     }
 	
-	@After
-	public void teardown() throws IOException {
-		httpClient.close();
+	private void logResponse (HttpResponse<String> response) {
+        LOGGER.info("Response CODE [" + response.statusCode() + "] | BODY [" + response.body() + "]");
 	}
+	
 }

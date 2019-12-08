@@ -18,7 +18,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.superbank.model.Account;
+import com.superbank.dao.model.Account;
 import com.superbank.utils.ConversionUtils;
 
 
@@ -38,7 +38,20 @@ public class TransactionManagerTest {
         awaitInitialization();
     }
     
-	@Test public void testGetAccount() throws IOException, InterruptedException {
+	@Test public void testGetAccount_200() throws IOException, InterruptedException {
+		HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(HOST_URL + "/account/1"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(200, response.statusCode());
+    }
+    
+	@Test public void testGetAccount_200_Empty() throws IOException, InterruptedException {
 		HttpRequest request = HttpRequest.newBuilder()
                 .GET()
                 .uri(URI.create(HOST_URL + "/account/123"))
@@ -51,9 +64,22 @@ public class TransactionManagerTest {
     	assertEquals(200, response.statusCode());
     }
     
+	@Test public void testGetAccount_422_badinput() throws IOException, InterruptedException {
+		HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(HOST_URL + "/account/asd"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(422, response.statusCode());
+    }
+    
 	@Test public void testPostAccount_400() throws IOException, InterruptedException{
 		Account account = new Account();
-		account.setId("bad data");
+		account.setId(42);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .POST(ConversionUtils.buildFormData(account))
@@ -84,9 +110,55 @@ public class TransactionManagerTest {
 
     	assertEquals(HttpStatus.CREATED_201, response.statusCode());
     }
+
+	@Test public void testGetAllAccounts_200() throws IOException, InterruptedException{
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(HOST_URL + "/accounts"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(HttpStatus.OK_200, response.statusCode());
+    }
 	
 	private void logResponse (HttpResponse<String> response) {
         LOGGER.info("Response CODE [" + response.statusCode() + "] | BODY [" + response.body() + "]");
 	}
+	
+
+	@Test public void testAccountCreation() throws IOException, InterruptedException{
+		Account account = new Account();
+		account.setCurrency("EUR");
+		account.setEmail("email@gmail.com");
+		account.setPhone("1234567890");
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(ConversionUtils.buildFormData(account))
+                .uri(URI.create(HOST_URL + "/account"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(HttpStatus.CREATED_201, response.statusCode());
+    	
+    	Account accountCreated = ConversionUtils.fromJson(response.body(), Account.class);
+    	
+    	HttpRequest requestGet = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(HOST_URL + "/account/" + accountCreated.getId()))
+                .build();
+
+        HttpResponse<String> responseGet = httpClient.send(requestGet, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(responseGet);
+
+    	assertEquals(200, responseGet.statusCode());
+    }
 	
 }

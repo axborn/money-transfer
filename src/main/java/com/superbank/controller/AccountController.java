@@ -1,26 +1,37 @@
 package com.superbank.controller;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.superbank.dao.AccountDao;
+import com.superbank.dao.model.Account;
+import com.superbank.exceptions.DaoException;
 import com.superbank.exceptions.ValidationException;
-import com.superbank.model.Account;
 
 public class AccountController {
 
+	private static final Logger LOGGER = LogManager.getLogger(AccountController.class);
+	private AccountDao accountDao = new AccountDao();
+	
 	public AccountController () {
 		
 	}
+
+	public List<Account> getAllAccounts() throws DaoException {
+		return accountDao.getAll();
+	}
 	
-	public Account getAccount(String id) {
-		Account account = new Account();
-		account.setId(id);
-		return account;
+	public Optional<Account> getAccount(int id) throws DaoException {
+		return accountDao.get(id);
 	}
 
-	public Account insertAccount(Account account) throws ValidationException {
-		AccountValidator.validateAccountBeforeCreation(account);
+	public Account insertAccount(Account account) throws ValidationException, DaoException {
+		AccountValidator.validateBeforeCreation(account);
 		
-		account.setId("123321");
-		
-		return account;
+		return accountDao.insert(account);
 	}
 	
 	

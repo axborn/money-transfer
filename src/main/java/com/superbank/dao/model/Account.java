@@ -1,8 +1,8 @@
-package com.superbank.model;
+package com.superbank.dao.model;
 
 public class Account {
 	
-	private String id;
+	private int id;
 	private String status;
 	private String email;
 	private String phone;
@@ -10,10 +10,10 @@ public class Account {
 	private String currency;
 	private String balance;
 	
-	public String getId() {
+	public int getId() {
 		return id;
 	}
-	public void setId(String id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 	public String getEmail() {

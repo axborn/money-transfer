@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import com.superbank.dao.TransactionDao;
 import com.superbank.dao.model.Transaction;
 import com.superbank.exceptions.DaoException;
+import com.superbank.exceptions.ValidationException;
 
 public class TransactionController {
 
@@ -20,6 +21,12 @@ public class TransactionController {
 
 	public List<Transaction> getAllTransactions(int accountNumber) throws DaoException {
 		return transactionDao.getAll(accountNumber);
+	}
+
+	public Transaction insertTransaction(Transaction transaction) throws DaoException, ValidationException {
+		TransactionValidator.validateBeforeCreation(transaction);
+		
+		return transactionDao.insert(transaction);
 	}
 	
 	

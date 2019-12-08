@@ -88,6 +88,19 @@ public class FinTechUnicornApplication {
 			}
 		});
 
+		post("/transaction", (request, response) -> {
+			Transaction requestTransaction = ConversionUtils.fromJson(request.body(), Transaction.class);
+
+			try {
+				Transaction createdTransaction = transactionController.insertTransaction(requestTransaction);
+				response.status(HttpStatus.CREATED_201);
+				return ConversionUtils.toJson(createdTransaction);
+			} catch (ValidationException validationException) {
+				response.status(HttpStatus.BAD_REQUEST_400);
+				return validationException.getMessage();
+			}
+		});
+
 	}
 
 }

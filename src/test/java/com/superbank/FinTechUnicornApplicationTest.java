@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static spark.Spark.awaitInitialization;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,6 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.superbank.dao.model.Account;
+import com.superbank.dao.model.Transaction;
 import com.superbank.utils.ConversionUtils;
 
 
@@ -157,10 +159,9 @@ public class FinTechUnicornApplicationTest {
     }
 
 	@Test public void testGetAllTransactions_200() throws IOException, InterruptedException{
-
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()
-                .uri(URI.create(HOST_URL + "/accounts"))
+                .uri(URI.create(HOST_URL + "/transactions/1"))
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -168,6 +169,26 @@ public class FinTechUnicornApplicationTest {
         logResponse(response);
 
     	assertEquals(HttpStatus.OK_200, response.statusCode());
+    }
+
+	@Test public void testPostTransaction_201() throws IOException, InterruptedException{
+		Transaction transaction = new Transaction();
+		transaction.setFromAccount(1);
+		transaction.setToAccount(2);
+		transaction.setCurrency("EUR");
+		transaction.setAmount(BigDecimal.TEN);
+		transaction.setStatus("APPLIED");
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(ConversionUtils.buildFormData(transaction))
+                .uri(URI.create(HOST_URL + "/transaction"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(HttpStatus.CREATED_201, response.statusCode());
     }
 	
 	private void logResponse (HttpResponse<String> response) {

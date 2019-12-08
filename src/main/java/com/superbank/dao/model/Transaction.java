@@ -7,7 +7,8 @@ public class Transaction {
 	private int id;
 	private int fromAccount;
 	private int toAccount;
-	private BigDecimal balance;
+	private String currency;
+	private BigDecimal amount;
 	private String status;
 	
 	public int getId() {
@@ -28,11 +29,17 @@ public class Transaction {
 	public void setToAccount(int toAccount) {
 		this.toAccount = toAccount;
 	}
-	public BigDecimal getBalance() {
-		return balance;
+	public String getCurrency() {
+		return currency;
 	}
-	public void setBalance(BigDecimal balance) {
-		this.balance = balance;
+	public void setCurrency(String currency) {
+		this.currency = currency;
+	}
+	public BigDecimal getAmount() {
+		return amount;
+	}
+	public void setAmount(BigDecimal amount) {
+		this.amount = amount;
 	}
 	public String getStatus() {
 		return status;

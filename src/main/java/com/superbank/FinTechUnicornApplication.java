@@ -15,23 +15,26 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.http.HttpStatus;
 
 import com.superbank.controller.AccountController;
+import com.superbank.controller.TransactionController;
 import com.superbank.dao.model.Account;
+import com.superbank.dao.model.Transaction;
 import com.superbank.exceptions.DaoException;
 import com.superbank.exceptions.ValidationException;
 import com.superbank.utils.ConversionUtils;
 
-public class TransactionManager {
+public class FinTechUnicornApplication {
 
-	private static final Logger LOGGER = LogManager.getLogger(TransactionManager.class);
+	private static final Logger LOGGER = LogManager.getLogger(FinTechUnicornApplication.class);
 
 	public static void main(String[] args) {
 
 		AccountController accountController = new AccountController();
+		TransactionController transactionController = new TransactionController();
 
 		LOGGER.info("START");
 
-		before("/*", (request, response) -> LOGGER
-				.info("Received API call " + request.requestMethod() + " to path: " + request.uri()));
+		before("/*", (request, response) -> 
+			LOGGER.info("Received API call " + request.requestMethod() + " to path: " + request.uri()));
 
 		get("/accounts", (request, response) -> {
 			try {
@@ -70,6 +73,21 @@ public class TransactionManager {
 				return validationException.getMessage();
 			}
 		});
+		
+
+		get("/transactions/:accountNumber", (request, response) -> {
+			try {
+				List<Transaction> accounts = transactionController.getAllTransactions(Integer.parseInt(request.params("accountNumber")));
+				return ConversionUtils.toJson(accounts);
+			} catch (DaoException daoException) {
+				response.status(HttpStatus.NOT_FOUND_404);
+				return daoException.getMessage();
+			} catch (NumberFormatException nfException) {
+				response.status(HttpStatus.UNPROCESSABLE_ENTITY_422);
+				return nfException.getMessage();
+			}
+		});
+
 	}
 
 }

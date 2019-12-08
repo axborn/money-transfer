@@ -1,5 +1,7 @@
 package com.superbank.dao.model;
 
+import java.math.BigDecimal;
+
 public class Account {
 	
 	private int id;
@@ -8,7 +10,7 @@ public class Account {
 	private String phone;
 	private String iban;
 	private String currency;
-	private String balance;
+	private BigDecimal balance;
 	
 	public int getId() {
 		return id;
@@ -40,10 +42,10 @@ public class Account {
 	public void setCurrency(String currency) {
 		this.currency = currency;
 	}
-	public String getBalance() {
+	public BigDecimal getBalance() {
 		return balance;
 	}
-	public void setBalance(String balance) {
+	public void setBalance(BigDecimal balance) {
 		this.balance = balance;
 	}
 	public String getStatus() {

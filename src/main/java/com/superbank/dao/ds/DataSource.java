@@ -1,4 +1,4 @@
-package com.superbank.dao.jdbc;
+package com.superbank.dao.ds;
 
 import java.sql.Connection;
 import java.sql.SQLException;

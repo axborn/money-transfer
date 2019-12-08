@@ -1,5 +1,6 @@
 package com.superbank.dao;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,17 +8,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.superbank.dao.jdbc.DataSource;
+import com.superbank.dao.ds.DataSource;
 import com.superbank.dao.model.Account;
 import com.superbank.exceptions.DaoException;
 
-public class AccountDao implements Dao<Account> {
+import spark.utils.StringUtils;
+
+public class AccountDao {
 
 	private static final Logger LOGGER = LogManager.getLogger(AccountDao.class);
 
@@ -30,7 +32,6 @@ public class AccountDao implements Dao<Account> {
 
 	}
 
-	@Override
 	public Optional<Account> get(int id) throws DaoException {
 		LOGGER.info("Attempting " + SQL_QUERY_GET);
 
@@ -48,6 +49,7 @@ public class AccountDao implements Dao<Account> {
 				account.setPhone(rs.getString("PHONE"));
 				account.setIban(rs.getString("IBAN"));
 				account.setCurrency(rs.getString("CURRENCY"));
+				account.setBalance(rs.getBigDecimal("BALANCE"));
 				return Optional.of(account);
 			}
 		} catch (SQLException e) {
@@ -56,7 +58,6 @@ public class AccountDao implements Dao<Account> {
 		return Optional.empty();
 	}
 
-	@Override
 	public List<Account> getAll() throws DaoException {
 		LOGGER.info("Attempting " + SQL_QUERY_GETALL);
 
@@ -74,6 +75,7 @@ public class AccountDao implements Dao<Account> {
 				account.setPhone(rs.getString("PHONE"));
 				account.setIban(rs.getString("IBAN"));
 				account.setCurrency(rs.getString("CURRENCY"));
+				account.setBalance(rs.getBigDecimal("BALANCE"));
 				accounts.add(account);
 			}
 		} catch (SQLException e) {
@@ -82,19 +84,27 @@ public class AccountDao implements Dao<Account> {
 		return accounts;
 	}
 
-	@Override
 	public Account insert(Account account) throws DaoException {
-		LOGGER.info("Attempting " + SQL_QUERY_GETALL);
+		LOGGER.info("Attempting " + SQL_QUERY_INSERT);
 
 		try (Connection con = DataSource.getConnection();
 				PreparedStatement statement = con.prepareStatement(SQL_QUERY_INSERT,
 						Statement.RETURN_GENERATED_KEYS);) {
-			statement.setString(1, account.getStatus());
+			if (StringUtils.isEmpty(account.getStatus()))
+				statement.setString(1, "PENDING");
+			else
+				statement.setString(1, account.getStatus());
 			statement.setString(2, account.getEmail());
 			statement.setString(3, account.getPhone());
-			statement.setString(4, account.getIban());
+			if (StringUtils.isEmpty(account.getIban()))
+				statement.setString(4, "LT" + account.getId());
+			else
+				statement.setString(4, account.getIban());
 			statement.setString(5, account.getCurrency());
-			statement.setString(6, account.getBalance());
+			if (account.getBalance() == null)
+				statement.setBigDecimal(6, BigDecimal.ZERO);
+			else
+				statement.setBigDecimal(6, account.getBalance());
 
 			int affectedRows = statement.executeUpdate();
 
@@ -113,15 +123,5 @@ public class AccountDao implements Dao<Account> {
 		} catch (SQLException se) {
 			throw new DaoException(se);
 		}
-	}
-
-	@Override
-	public void update(Account Account, String[] params) {
-		// TODO
-	}
-
-	@Override
-	public void delete(Account Account) {
-		// TODO
 	}
 }

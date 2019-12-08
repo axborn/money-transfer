@@ -22,11 +22,11 @@ import com.superbank.dao.model.Account;
 import com.superbank.utils.ConversionUtils;
 
 
-public class TransactionManagerTest {
+public class FinTechUnicornApplicationTest {
 	
 	private String HOST_URL = "http://localhost:4567";
 
-	private static final Logger LOGGER = LogManager.getLogger(TransactionManagerTest.class);
+	private static final Logger LOGGER = LogManager.getLogger(FinTechUnicornApplicationTest.class);
 	
 	private final HttpClient httpClient = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_2)
@@ -34,7 +34,7 @@ public class TransactionManagerTest {
     
     @Before
     public void setup() {
-    	TransactionManager.main(null);
+    	FinTechUnicornApplication.main(null);
         awaitInitialization();
     }
     
@@ -124,11 +124,6 @@ public class TransactionManagerTest {
 
     	assertEquals(HttpStatus.OK_200, response.statusCode());
     }
-	
-	private void logResponse (HttpResponse<String> response) {
-        LOGGER.info("Response CODE [" + response.statusCode() + "] | BODY [" + response.body() + "]");
-	}
-	
 
 	@Test public void testAccountCreation() throws IOException, InterruptedException{
 		Account account = new Account();
@@ -160,5 +155,23 @@ public class TransactionManagerTest {
 
     	assertEquals(200, responseGet.statusCode());
     }
+
+	@Test public void testGetAllTransactions_200() throws IOException, InterruptedException{
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(HOST_URL + "/accounts"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(HttpStatus.OK_200, response.statusCode());
+    }
+	
+	private void logResponse (HttpResponse<String> response) {
+        LOGGER.info("Response CODE [" + response.statusCode() + "] | BODY [" + response.body() + "]");
+	}
 	
 }

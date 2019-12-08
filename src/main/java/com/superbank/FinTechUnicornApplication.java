@@ -8,7 +8,6 @@ import static spark.Spark.get;
 import static spark.Spark.post;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +33,7 @@ public class FinTechUnicornApplication {
 		LOGGER.info("START");
 
 		before("/*", (request, response) -> 
-			LOGGER.info("Received API call " + request.requestMethod() + " to path: " + request.uri()));
+			LOGGER.info("Received API call " + request.requestMethod() + " to path: " + request.uri() + " with body: " + request.body()));
 
 		get("/accounts", (request, response) -> {
 			try {
@@ -48,7 +47,7 @@ public class FinTechUnicornApplication {
 
 		get("/account/:accountNumber", (request, response) -> {
 			try {
-				Optional<Account> account = accountController.getAccount(Integer.parseInt(request.params("accountNumber")));
+				Account account = accountController.getAccount(Integer.parseInt(request.params("accountNumber")));
 				return ConversionUtils.toJson(account);
 
 			} catch (DaoException daoException) {

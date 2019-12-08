@@ -53,7 +53,7 @@ public class FinTechUnicornApplicationTest {
     	assertEquals(200, response.statusCode());
     }
     
-	@Test public void testGetAccount_200_Empty() throws IOException, InterruptedException {
+	@Test public void testGetAccount_404_Empty() throws IOException, InterruptedException {
 		HttpRequest request = HttpRequest.newBuilder()
                 .GET()
                 .uri(URI.create(HOST_URL + "/account/123"))
@@ -63,7 +63,7 @@ public class FinTechUnicornApplicationTest {
 
         logResponse(response);
 
-    	assertEquals(200, response.statusCode());
+    	assertEquals(404, response.statusCode());
     }
     
 	@Test public void testGetAccount_422_badinput() throws IOException, InterruptedException {
@@ -171,13 +171,13 @@ public class FinTechUnicornApplicationTest {
     	assertEquals(HttpStatus.OK_200, response.statusCode());
     }
 
-	@Test public void testPostTransaction_201() throws IOException, InterruptedException{
+	@Test public void testPostTransaction_201_cleared() throws IOException, InterruptedException{
 		Transaction transaction = new Transaction();
 		transaction.setFromAccount(1);
 		transaction.setToAccount(2);
 		transaction.setCurrency("EUR");
 		transaction.setAmount(BigDecimal.TEN);
-		transaction.setStatus("APPLIED");
+		transaction.setStatus("CLEARED");
 
         HttpRequest request = HttpRequest.newBuilder()
                 .POST(ConversionUtils.buildFormData(transaction))
@@ -189,6 +189,64 @@ public class FinTechUnicornApplicationTest {
         logResponse(response);
 
     	assertEquals(HttpStatus.CREATED_201, response.statusCode());
+    }
+
+	@Test public void testPostTransaction_400() throws IOException, InterruptedException{
+		Transaction transaction = new Transaction();
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(ConversionUtils.buildFormData(transaction))
+                .uri(URI.create(HOST_URL + "/transaction"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(HttpStatus.BAD_REQUEST_400, response.statusCode());
+    }
+
+	@Test public void testPostTransaction_201_pending() throws IOException, InterruptedException{
+		HttpRequest requestAccount1 = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(HOST_URL + "/account/1"))
+                .build();
+        HttpResponse<String> responseAccount1 = httpClient.send(requestAccount1, HttpResponse.BodyHandlers.ofString());
+        Account account1Before = ConversionUtils.fromJson(responseAccount1.body(), Account.class);
+
+		HttpRequest requestAccount2 = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(HOST_URL + "/account/2"))
+                .build();
+        HttpResponse<String> responseAccount2 = httpClient.send(requestAccount2, HttpResponse.BodyHandlers.ofString());
+        Account account2Before = ConversionUtils.fromJson(responseAccount2.body(), Account.class);
+		
+		Transaction transaction = new Transaction();
+		transaction.setFromAccount(1);
+		transaction.setToAccount(2);
+		transaction.setCurrency("EUR");
+		transaction.setAmount(BigDecimal.TEN);
+		transaction.setStatus("PENDING");
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(ConversionUtils.buildFormData(transaction))
+                .uri(URI.create(HOST_URL + "/transaction"))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        logResponse(response);
+
+    	assertEquals(HttpStatus.CREATED_201, response.statusCode());
+    	
+
+        HttpResponse<String> responseAccount1After = httpClient.send(requestAccount1, HttpResponse.BodyHandlers.ofString());
+        Account account1After = ConversionUtils.fromJson(responseAccount1After.body(), Account.class);
+        HttpResponse<String> responseAccount2After = httpClient.send(requestAccount2, HttpResponse.BodyHandlers.ofString());
+        Account account2After = ConversionUtils.fromJson(responseAccount2After.body(), Account.class);
+        
+    	assertEquals(account1Before.getBalance().subtract(BigDecimal.TEN), account1After.getBalance());
+    	assertEquals(account2Before.getBalance().add(BigDecimal.TEN), account2After.getBalance());
     }
 	
 	private void logResponse (HttpResponse<String> response) {

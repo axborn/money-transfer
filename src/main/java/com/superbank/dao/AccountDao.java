@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,12 +26,13 @@ public class AccountDao {
 	private String SQL_QUERY_GETALL = "select * from ACCOUNTS";
 	private String SQL_QUERY_INSERT = "insert into ACCOUNTS ( ID, STATUS, EMAIL, PHONE, IBAN, CURRENCY, BALANCE ) "
 			+ "VALUES ( default, ?, ?, ?, ?, ?, ? )";
+	private String SQL_QUERY_UPDATE_AMOUNT = "update ACCOUNTS set BALANCE = ? where ID = ?";
 
 	public AccountDao() {
 
 	}
 
-	public Optional<Account> get(int id) throws DaoException {
+	public Account get(int id) throws DaoException {
 		LOGGER.info("Attempting " + SQL_QUERY_GET);
 
 		try (Connection con = DataSource.getConnection();
@@ -50,12 +50,12 @@ public class AccountDao {
 				account.setIban(rs.getString("IBAN"));
 				account.setCurrency(rs.getString("CURRENCY"));
 				account.setBalance(rs.getBigDecimal("BALANCE"));
-				return Optional.of(account);
+				return account;
 			}
 		} catch (SQLException e) {
 			throw new DaoException(e);
 		}
-		return Optional.empty();
+		throw new DaoException("No account");
 	}
 
 	public List<Account> getAll() throws DaoException {
@@ -109,19 +109,39 @@ public class AccountDao {
 			int affectedRows = statement.executeUpdate();
 
 			if (affectedRows == 0) {
-				throw new SQLException("Creating user failed, no rows affected.");
+				throw new DaoException("Creating account failed, no rows affected.");
 			}
 
 			try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
 				if (generatedKeys.next()) {
 					account.setId(generatedKeys.getInt(1));
 				} else {
-					throw new SQLException("Creating user failed, no ID obtained.");
+					throw new DaoException("Creating account failed, no ID obtained.");
 				}
 			}
 			return account;
 		} catch (SQLException se) {
 			throw new DaoException(se);
 		}
+	}
+
+	public void updateAmount(Account account) throws DaoException {
+		LOGGER.info("Attempting " + SQL_QUERY_UPDATE_AMOUNT);
+
+		try (Connection con = DataSource.getConnection();
+				PreparedStatement statement = con.prepareStatement(SQL_QUERY_UPDATE_AMOUNT,
+						Statement.RETURN_GENERATED_KEYS);) {
+			statement.setBigDecimal(1, account.getBalance());
+			statement.setInt(2, account.getId());
+
+			int affectedRows = statement.executeUpdate();
+
+			if (affectedRows == 0) {
+				throw new DaoException("Creating user failed, no rows affected.");
+			}
+		} catch (SQLException se) {
+			throw new DaoException(se);
+		}
+
 	}
 }

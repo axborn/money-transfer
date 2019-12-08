@@ -25,6 +25,7 @@ public class TransactionDao {
 	private String SQL_QUERY_GETALL = "select * from TRANSACTIONS where FROM_ACCOUNT = ? OR TO_ACCOUNT = ?";
 	private String SQL_QUERY_INSERT = "insert into TRANSACTIONS ( ID, FROM_ACCOUNT, TO_ACCOUNT, CURRENCY, AMOUNT, STATUS ) "
 			+ "VALUES ( default, ?, ?, ?, ?, ? )";
+	private String SQL_QUERY_UPDATE_STATUS = "update TRANSACTIONS set STATUS = ? where ID = ?";
 
 	public TransactionDao() {
 
@@ -75,19 +76,39 @@ public class TransactionDao {
 			int affectedRows = statement.executeUpdate();
 
 			if (affectedRows == 0) {
-				throw new SQLException("Creating user failed, no rows affected.");
+				throw new DaoException("Creating transaction failed, no rows affected.");
 			}
 
 			try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
 				if (generatedKeys.next()) {
 					transaction.setId(generatedKeys.getInt(1));
 				} else {
-					throw new SQLException("Creating user failed, no ID obtained.");
+					throw new DaoException("Creating transaction failed, no ID obtained.");
 				}
 			}
 			return transaction;
 		} catch (SQLException se) {
 			throw new DaoException(se);
 		}
+	}
+
+	public void updateStatus(Transaction transaction) throws DaoException {
+		LOGGER.info("Attempting " + SQL_QUERY_UPDATE_STATUS);
+
+		try (Connection con = DataSource.getConnection();
+				PreparedStatement statement = con.prepareStatement(SQL_QUERY_UPDATE_STATUS,
+						Statement.RETURN_GENERATED_KEYS);) {
+			statement.setString(1, transaction.getStatus());
+			statement.setInt(2, transaction.getId());
+
+			int affectedRows = statement.executeUpdate();
+
+			if (affectedRows == 0) {
+				throw new DaoException("Creating user failed, no rows affected.");
+			}
+		} catch (SQLException se) {
+			throw new DaoException(se);
+		}
+		
 	}
 }

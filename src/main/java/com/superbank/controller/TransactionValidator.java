@@ -9,9 +9,9 @@ public class TransactionValidator {
 
 	static boolean validateBeforeCreation(Transaction transaction) throws ValidationException {
 		String exceptions = "";
-		if (StringUtils.isEmpty(transaction.getFromAccount()))
+		if (transaction.getFromAccount() == 0)
 			exceptions += ("Empty origin account; ");
-		if (StringUtils.isEmpty(transaction.getToAccount()))
+		if (transaction.getToAccount() == 0)
 			exceptions += ("Empty destination account; ");
 		if (StringUtils.isEmpty(transaction.getCurrency()))
 			exceptions += ("Empty currency; ");
